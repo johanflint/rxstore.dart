@@ -1,0 +1,17 @@
+# Dart/Pub related
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+pubspec.lock
+
+# dartdoc
+doc/api/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
