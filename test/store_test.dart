@@ -1,3 +1,4 @@
+import 'package:rxdart/rxdart.dart';
 import 'package:rxstore/rxstore.dart';
 import 'package:test/test.dart';
 
@@ -42,6 +43,58 @@ void main() {
       store.dispatcher.add(const AddIntAction(42));
       store.dispose();
     });
+
+    group('with epics', () {
+      test('passes the action stream to the epic', () {
+        Stream<Action<dynamic>> epic(Stream<Action<dynamic>> actions, ValueObservable<int> state) {
+          expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
+
+          return const Stream<Action<dynamic>>.empty();
+        }
+
+        final store = Store<int>(intReducer, initialState: 42, epic: epic);
+        store.dispatcher.add(const AddIntAction(42));
+        store.dispatcher.add(const AddIntAction(1337));
+      });
+
+      test('dispatches the emitted actions', () async {
+        Stream<Action<dynamic>> epic(Stream<Action<dynamic>> actions, ValueObservable<int> state) {
+          return Observable<Action<dynamic>>(actions)
+              .ofType(const TypeToken<AddIntAction>())
+              .map((AddIntAction action) => const MultiplyIntAction(2));
+        }
+
+        final store = Store<int>(intReducer, initialState: 0, epic: epic);
+
+        store.dispatcher.add(const AddIntAction(3));
+
+        expect(
+            store.state,
+            emitsInOrder(<int>[
+              0, // Initial state
+              3, // AddIntAction(3)
+              6, // MultiplyIntAction(2)
+            ]));
+      });
+
+      test('passes the action stream to combined epics', () {
+        Stream<Action<dynamic>> epicOne(Stream<Action<dynamic>> actions, ValueObservable<int> state) {
+          expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
+
+          return const Stream<Action<dynamic>>.empty();
+        }
+
+        Stream<Action<dynamic>> epicTwo(Stream<Action<dynamic>> actions, ValueObservable<int> state) {
+          expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
+
+          return const Stream<Action<dynamic>>.empty();
+        }
+
+        final store = Store<int>(intReducer, initialState: 42, epic: combineEpics(<Epic<int>>[epicOne, epicTwo]));
+        store.dispatcher.add(const AddIntAction(42));
+        store.dispatcher.add(const AddIntAction(1337));
+      });
+    });
   });
 }
 
@@ -50,11 +103,28 @@ class AddIntAction implements Action<int> {
 
   @override
   final int payload;
+
+  @override
+  String toString() => 'AddIntAction{payload: $payload}';
+}
+
+class MultiplyIntAction implements Action<int> {
+  const MultiplyIntAction(this.payload);
+
+  @override
+  final int payload;
+
+  @override
+  String toString() => 'MultiplyIntAction{payload: $payload}';
 }
 
 int intReducer(int state, Action<dynamic> action) {
   if (action is AddIntAction) {
     return action.payload;
+  }
+
+  if (action is MultiplyIntAction) {
+    return state * action.payload;
   }
 
   return state;
