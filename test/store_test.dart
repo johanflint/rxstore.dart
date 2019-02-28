@@ -12,7 +12,7 @@ void main() {
 
     test('calls the reducer when an action is received', () async {
       var isCalled = false;
-      int reducer(int state, Action<dynamic> action) {
+      int reducer(int state, Action action) {
         isCalled = true;
         return state;
       }
@@ -46,10 +46,10 @@ void main() {
 
     group('with epics', () {
       test('passes the action stream to the epic', () {
-        Stream<Action<dynamic>> epic(Stream<Action<dynamic>> actions, ValueObservable<int> state) {
+        Stream<Action> epic(Stream<Action> actions, ValueObservable<int> state) {
           expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
 
-          return const Stream<Action<dynamic>>.empty();
+          return const Stream<Action>.empty();
         }
 
         final store = Store<int>(intReducer, initialState: 42, epic: epic);
@@ -58,8 +58,8 @@ void main() {
       });
 
       test('dispatches the emitted actions', () async {
-        Stream<Action<dynamic>> epic(Stream<Action<dynamic>> actions, ValueObservable<int> state) {
-          return Observable<Action<dynamic>>(actions)
+        Stream<Action> epic(Stream<Action> actions, ValueObservable<int> state) {
+          return Observable<Action>(actions)
               .ofType(const TypeToken<AddIntAction>())
               .map((AddIntAction action) => const MultiplyIntAction(2));
         }
@@ -78,16 +78,16 @@ void main() {
       });
 
       test('passes the action stream to combined epics', () {
-        Stream<Action<dynamic>> epicOne(Stream<Action<dynamic>> actions, ValueObservable<int> state) {
+        Stream<Action> epicOne(Stream<Action> actions, ValueObservable<int> state) {
           expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
 
-          return const Stream<Action<dynamic>>.empty();
+          return const Stream<Action>.empty();
         }
 
-        Stream<Action<dynamic>> epicTwo(Stream<Action<dynamic>> actions, ValueObservable<int> state) {
+        Stream<Action> epicTwo(Stream<Action> actions, ValueObservable<int> state) {
           expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
 
-          return const Stream<Action<dynamic>>.empty();
+          return const Stream<Action>.empty();
         }
 
         final store = Store<int>(intReducer, initialState: 42, epic: combineEpics(<Epic<int>>[epicOne, epicTwo]));
@@ -98,27 +98,25 @@ void main() {
   });
 }
 
-class AddIntAction implements Action<int> {
+class AddIntAction implements Action {
   const AddIntAction(this.payload);
 
-  @override
   final int payload;
 
   @override
   String toString() => 'AddIntAction{payload: $payload}';
 }
 
-class MultiplyIntAction implements Action<int> {
+class MultiplyIntAction implements Action {
   const MultiplyIntAction(this.payload);
 
-  @override
   final int payload;
 
   @override
   String toString() => 'MultiplyIntAction{payload: $payload}';
 }
 
-int intReducer(int state, Action<dynamic> action) {
+int intReducer(int state, Action action) {
   if (action is AddIntAction) {
     return action.payload;
   }
