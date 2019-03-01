@@ -19,6 +19,13 @@ abstract class Action {}
 /// ```
 typedef Reducer<State> = State Function(State state, Action action);
 
+/// Combines a list of [Reducer]s into one.
+Reducer<State> combineReducers<State>(List<Reducer<State>> reducers) {
+  return (State state, Action action) {
+    return reducers.fold<State>(state, (State state, Reducer<State> reducer) => reducer(state, action));
+  };
+}
+
 /// An epic is used for asynchronous operations based on an action.
 ///
 /// It is a function which takes a stream of [Action]s and returns a stream of

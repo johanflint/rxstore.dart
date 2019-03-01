@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:rxdart/rxdart.dart';
 import 'package:rxstore/rxstore.dart';
 import 'package:test/test.dart';
@@ -24,6 +26,23 @@ void main() {
       await store.dispose();
 
       expect(isCalled, isTrue);
+    });
+
+    test('calls combined reducers when an action is received', () {
+      final store = Store<TestState>(
+        combineReducers(<Reducer<TestState>>[reducerOne, reducerTwo]),
+        initialState: const TestState(),
+      );
+
+      expect(
+          store.state,
+          emitsInOrder(<TestState>[
+            const TestState(reducerOneCalled: false, reducerTwoCalled: false), // Initial state
+            const TestState(reducerOneCalled: true, reducerTwoCalled: true), // AddIntAction(42)
+          ]));
+
+      store.dispatcher.add(const AddIntAction(42));
+      scheduleMicrotask(store.dispose);
     });
 
     test('notifies subscribers with the updated state when an action is reduced', () {
@@ -127,3 +146,30 @@ int intReducer(int state, Action action) {
 
   return state;
 }
+
+class TestState {
+  const TestState({this.reducerOneCalled = false, this.reducerTwoCalled = false});
+
+  final bool reducerOneCalled;
+  final bool reducerTwoCalled;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TestState &&
+          runtimeType == other.runtimeType &&
+          reducerOneCalled == other.reducerOneCalled &&
+          reducerTwoCalled == other.reducerTwoCalled;
+
+  @override
+  int get hashCode => reducerOneCalled.hashCode ^ reducerTwoCalled.hashCode;
+
+  @override
+  String toString() => 'TestState{reducerOneCalled: $reducerOneCalled, reducerTwoCalled: $reducerTwoCalled}';
+}
+
+TestState reducerOne(TestState state, Action action) =>
+    TestState(reducerOneCalled: true, reducerTwoCalled: state.reducerTwoCalled);
+
+TestState reducerTwo(TestState state, Action action) =>
+    TestState(reducerOneCalled: state.reducerOneCalled, reducerTwoCalled: true);
