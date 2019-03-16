@@ -10,7 +10,7 @@ abstract class Action {}
 ///
 /// ```dart
 /// int counterReducer(int state, Action action) {
-///   if (action is IncrementCounterAction) {
+///   if (action is IncrementCounter) {
 ///     return state + action.payload;
 ///   }
 ///

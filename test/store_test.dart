@@ -22,7 +22,7 @@ void main() {
       final store = Store<int>(reducer, initialState: 42);
       expect(isCalled, isFalse);
 
-      store.dispatcher.add(const AddIntAction(1337));
+      store.dispatcher.add(const AddInt(1337));
       await store.dispose();
 
       expect(isCalled, isTrue);
@@ -38,10 +38,10 @@ void main() {
           store.state,
           emitsInOrder(<TestState>[
             const TestState(reducerOneCalled: false, reducerTwoCalled: false), // Initial state
-            const TestState(reducerOneCalled: true, reducerTwoCalled: true), // AddIntAction(42)
+            const TestState(reducerOneCalled: true, reducerTwoCalled: true), // AddInt(42)
           ]));
 
-      store.dispatcher.add(const AddIntAction(42));
+      store.dispatcher.add(const AddInt(42));
       scheduleMicrotask(store.dispose);
     });
 
@@ -50,7 +50,7 @@ void main() {
 
       expect(store.state, emitsInOrder(<int>[42, 1337]));
 
-      store.dispatcher.add(const AddIntAction(1337));
+      store.dispatcher.add(const AddInt(1337));
       store.dispose();
     });
 
@@ -59,88 +59,88 @@ void main() {
 
       expect(store.state, emitsInOrder(<int>[42]));
 
-      store.dispatcher.add(const AddIntAction(42));
+      store.dispatcher.add(const AddInt(42));
       store.dispose();
     });
 
     group('with epics', () {
       test('passes the action stream to the epic', () {
         Stream<Action> epic(Stream<Action> actions, ValueObservable<int> state) {
-          expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
+          expect(actions, emitsInOrder(<AddInt>[const AddInt(42), const AddInt(1337)]));
 
           return const Stream<Action>.empty();
         }
 
         final store = Store<int>(intReducer, initialState: 42, epic: epic);
-        store.dispatcher.add(const AddIntAction(42));
-        store.dispatcher.add(const AddIntAction(1337));
+        store.dispatcher.add(const AddInt(42));
+        store.dispatcher.add(const AddInt(1337));
       });
 
       test('dispatches the emitted actions', () async {
         Stream<Action> epic(Stream<Action> actions, ValueObservable<int> state) {
           return Observable<Action>(actions)
-              .ofType(const TypeToken<AddIntAction>())
-              .map((AddIntAction action) => const MultiplyIntAction(2));
+              .ofType(const TypeToken<AddInt>())
+              .map((AddInt action) => const MultiplyInt(2));
         }
 
         final store = Store<int>(intReducer, initialState: 0, epic: epic);
 
-        store.dispatcher.add(const AddIntAction(3));
+        store.dispatcher.add(const AddInt(3));
 
         expect(
             store.state,
             emitsInOrder(<int>[
               0, // Initial state
-              3, // AddIntAction(3)
-              6, // MultiplyIntAction(2)
+              3, // AddInt(3)
+              6, // MultiplyInt(2)
             ]));
       });
 
       test('passes the action stream to combined epics', () {
         Stream<Action> epicOne(Stream<Action> actions, ValueObservable<int> state) {
-          expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
+          expect(actions, emitsInOrder(<AddInt>[const AddInt(42), const AddInt(1337)]));
 
           return const Stream<Action>.empty();
         }
 
         Stream<Action> epicTwo(Stream<Action> actions, ValueObservable<int> state) {
-          expect(actions, emitsInOrder(<AddIntAction>[const AddIntAction(42), const AddIntAction(1337)]));
+          expect(actions, emitsInOrder(<AddInt>[const AddInt(42), const AddInt(1337)]));
 
           return const Stream<Action>.empty();
         }
 
         final store = Store<int>(intReducer, initialState: 42, epic: combineEpics(<Epic<int>>[epicOne, epicTwo]));
-        store.dispatcher.add(const AddIntAction(42));
-        store.dispatcher.add(const AddIntAction(1337));
+        store.dispatcher.add(const AddInt(42));
+        store.dispatcher.add(const AddInt(1337));
       });
     });
   });
 }
 
-class AddIntAction implements Action {
-  const AddIntAction(this.payload);
+class AddInt implements Action {
+  const AddInt(this.payload);
 
   final int payload;
 
   @override
-  String toString() => 'AddIntAction{payload: $payload}';
+  String toString() => 'AddInt{payload: $payload}';
 }
 
-class MultiplyIntAction implements Action {
-  const MultiplyIntAction(this.payload);
+class MultiplyInt implements Action {
+  const MultiplyInt(this.payload);
 
   final int payload;
 
   @override
-  String toString() => 'MultiplyIntAction{payload: $payload}';
+  String toString() => 'MultiplyInt{payload: $payload}';
 }
 
 int intReducer(int state, Action action) {
-  if (action is AddIntAction) {
+  if (action is AddInt) {
     return action.payload;
   }
 
-  if (action is MultiplyIntAction) {
+  if (action is MultiplyInt) {
     return state * action.payload;
   }
 
