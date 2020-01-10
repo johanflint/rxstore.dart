@@ -65,7 +65,7 @@ void main() {
 
     group('with epics', () {
       test('passes the action stream to the epic', () {
-        Stream<Action> epic(Stream<Action> actions, ValueObservable<int> state) {
+        Stream<Action> epic(Stream<Action> actions, ValueStream<int> state) {
           expect(actions, emitsInOrder(<AddInt>[const AddInt(42), const AddInt(1337)]));
 
           return const Stream<Action>.empty();
@@ -77,11 +77,8 @@ void main() {
       });
 
       test('dispatches the emitted actions', () async {
-        Stream<Action> epic(Stream<Action> actions, ValueObservable<int> state) {
-          return Observable<Action>(actions)
-              .ofType(const TypeToken<AddInt>())
-              .map((AddInt action) => const MultiplyInt(2));
-        }
+        Stream<Action> epic(Stream<Action> actions, ValueStream<int> state) =>
+            actions.whereType<AddInt>().map((AddInt action) => const MultiplyInt(2));
 
         final store = Store<int>(intReducer, initialState: 0, epic: epic);
 
@@ -97,7 +94,7 @@ void main() {
       });
 
       test('throws if null is emitted', () async {
-        Stream<Action> epic(Stream<Action> actions, ValueObservable<int> state) {
+        Stream<Action> epic(Stream<Action> actions, ValueStream<int> state) {
           return null;
         }
 
@@ -105,13 +102,13 @@ void main() {
       });
 
       test('passes the action stream to combined epics', () {
-        Stream<Action> epicOne(Stream<Action> actions, ValueObservable<int> state) {
+        Stream<Action> epicOne(Stream<Action> actions, ValueStream<int> state) {
           expect(actions, emitsInOrder(<AddInt>[const AddInt(42), const AddInt(1337)]));
 
           return const Stream<Action>.empty();
         }
 
-        Stream<Action> epicTwo(Stream<Action> actions, ValueObservable<int> state) {
+        Stream<Action> epicTwo(Stream<Action> actions, ValueStream<int> state) {
           expect(actions, emitsInOrder(<AddInt>[const AddInt(42), const AddInt(1337)]));
 
           return const Stream<Action>.empty();
