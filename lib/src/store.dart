@@ -34,11 +34,11 @@ Reducer<State> combineReducers<State>(List<Reducer<State>> reducers) {
 /// Epics cannot prevent actions from being handled by the reducers.
 ///
 /// If an incoming action is passed through, an infinite loop is created.
-typedef Epic<State> = Stream<Action> Function(Stream<Action> actions, ValueObservable<State> state);
+typedef Epic<State> = Stream<Action> Function(Stream<Action> actions, ValueStream<State> state);
 
 /// Combines a list of [Epic]s into one.
 Epic<State> combineEpics<State>(List<Epic<State>> epics) {
-  return (Stream<Action> actions, ValueObservable<State> state) {
+  return (Stream<Action> actions, ValueStream<State> state) {
     return MergeStream<Action>(epics.map((Epic<State> epic) => epic(actions, state)));
   };
 }
@@ -51,7 +51,7 @@ Epic<State> combineEpics<State>(List<Epic<State>> epics) {
 /// Listen to the [state] stream to get the current state and receive updates.
 class Store<State> {
   Store(this._reducer, {State initialState, Epic<State> epic, bool sync = false})
-      : _changeSubject = BehaviorSubject<State>(seedValue: initialState, sync: sync),
+      : _changeSubject = BehaviorSubject<State>.seeded(initialState, sync: sync),
         _dispatchSubject = PublishSubject<Action>(sync: sync) {
     if (epic != null) {
       final actions = epic(_dispatchSubject.stream, state);
@@ -65,7 +65,7 @@ class Store<State> {
   final BehaviorSubject<State> _changeSubject;
   final PublishSubject<Action> _dispatchSubject;
 
-  ValueObservable<State> get state => _changeSubject.stream;
+  ValueStream<State> get state => _changeSubject.stream;
 
   StreamSink<Action> get dispatcher => _dispatchSubject.sink;
 
