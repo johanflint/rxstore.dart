@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:meta/meta.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:rxstore/rxstore.dart';
 import 'package:test/test.dart';
@@ -166,6 +167,7 @@ int intReducer(int state, Action action) {
   return state;
 }
 
+@immutable
 class TestState {
   const TestState({this.reducerOneCalled = false, this.reducerTwoCalled = false});
 
