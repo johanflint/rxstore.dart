@@ -28,6 +28,22 @@ void main() {
       expect(isCalled, isTrue);
     });
 
+    test('calls the reducer when an action is received through dispatch', () async {
+      var isCalled = false;
+      int reducer(int state, Action action) {
+        isCalled = true;
+        return state;
+      }
+
+      final store = Store<int>(reducer, initialState: 42);
+      expect(isCalled, isFalse);
+
+      store.dispatch(const AddInt(1337));
+      await store.dispose();
+
+      expect(isCalled, isTrue);
+    });
+
     test('calls combined reducers when an action is received', () {
       final store = Store<TestState>(
         combineReducers(<Reducer<TestState>>[reducerOne, reducerTwo]),
@@ -41,7 +57,7 @@ void main() {
             const TestState(reducerOneCalled: true, reducerTwoCalled: true), // AddInt(42)
           ]));
 
-      store.dispatcher.add(const AddInt(42));
+      store.dispatch(const AddInt(42));
       scheduleMicrotask(store.dispose);
     });
 
@@ -50,8 +66,9 @@ void main() {
 
       expect(store.state, emitsInOrder(<int>[42, 1337]));
 
-      store.dispatcher.add(const AddInt(1337));
-      store.dispose();
+      store
+        ..dispatch(const AddInt(1337))
+        ..dispose();
     });
 
     test('does not notify subscribers if the state did not change', () {
@@ -59,8 +76,9 @@ void main() {
 
       expect(store.state, emitsInOrder(<int>[42]));
 
-      store.dispatcher.add(const AddInt(42));
-      store.dispose();
+      store
+        ..dispatch(const AddInt(42))
+        ..dispose();
     });
 
     group('with epics', () {
@@ -71,18 +89,14 @@ void main() {
           return const Stream<Action>.empty();
         }
 
-        final store = Store<int>(intReducer, initialState: 42, epic: epic);
-        store.dispatcher.add(const AddInt(42));
-        store.dispatcher.add(const AddInt(1337));
+        Store<int>(intReducer, initialState: 42, epic: epic)..dispatch(const AddInt(42))..dispatch(const AddInt(1337));
       });
 
       test('dispatches the emitted actions', () async {
         Stream<Action> epic(Stream<Action> actions, ValueStream<int> state) =>
             actions.whereType<AddInt>().map((AddInt action) => const MultiplyInt(2));
 
-        final store = Store<int>(intReducer, initialState: 0, epic: epic);
-
-        store.dispatcher.add(const AddInt(3));
+        final store = Store<int>(intReducer, initialState: 0, epic: epic)..dispatch(const AddInt(3));
 
         expect(
             store.state,
@@ -114,9 +128,9 @@ void main() {
           return const Stream<Action>.empty();
         }
 
-        final store = Store<int>(intReducer, initialState: 42, epic: combineEpics(<Epic<int>>[epicOne, epicTwo]));
-        store.dispatcher.add(const AddInt(42));
-        store.dispatcher.add(const AddInt(1337));
+        Store<int>(intReducer, initialState: 42, epic: combineEpics(<Epic<int>>[epicOne, epicTwo]))
+          ..dispatch(const AddInt(42))
+          ..dispatch(const AddInt(1337));
       });
     });
   });
