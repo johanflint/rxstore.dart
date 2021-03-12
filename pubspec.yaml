@@ -1,6 +1,6 @@
 name: rxstore
 description: Stream-based Redux implementation with support for side-effects.
-version: 0.1.0
+version: 0.2.0
 homepage: https://github.com/johanflint/rxstore.dart
 
 environment:
