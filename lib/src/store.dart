@@ -69,6 +69,10 @@ class Store<State> {
 
   StreamSink<Action> get dispatcher => _dispatchSubject.sink;
 
+  void dispatch(Action action) {
+    dispatcher.add(action);
+  }
+
   void _reduce(Action action) {
     final currentState = state.value;
     final newState = _reducer(currentState, action);
