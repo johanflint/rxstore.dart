@@ -108,14 +108,6 @@ void main() {
             ]));
       });
 
-      test('throws if null is emitted', () async {
-        Stream<Action> epic(Stream<Action> actions, ValueStream<int> state) {
-          return null;
-        }
-
-        expect(() => Store<int>(intReducer, initialState: 42, epic: epic), throwsA(isA<AssertionError>()));
-      });
-
       test('passes the action stream to combined epics', () {
         Stream<Action> epicOne(Stream<Action> actions, ValueStream<int> state) {
           expect(actions, emitsInOrder(<AddInt>[const AddInt(42), const AddInt(1337)]));

@@ -50,13 +50,11 @@ Epic<State> combineEpics<State>(List<Epic<State>> epics) {
 ///
 /// Listen to the [state] stream to get the current state and receive updates.
 class Store<State> {
-  Store(this._reducer, {State initialState, Epic<State> epic, bool sync = false})
+  Store(this._reducer, {required State initialState, Epic<State>? epic, bool sync = false})
       : _changeSubject = BehaviorSubject<State>.seeded(initialState, sync: sync),
         _dispatchSubject = PublishSubject<Action>(sync: sync) {
     if (epic != null) {
-      final actions = epic(_dispatchSubject.stream, state);
-      assert(actions != null, 'An epic must return a stream of actions');
-      actions.listen(dispatcher.add);
+      epic(_dispatchSubject.stream, state).listen(dispatcher.add);
     }
     _dispatchSubject.stream.listen(_reduce);
   }
@@ -74,7 +72,7 @@ class Store<State> {
   }
 
   void _reduce(Action action) {
-    final currentState = state.value;
+    final currentState = state.requireValue;
     final newState = _reducer(currentState, action);
     if (newState != currentState) {
       _changeSubject.add(newState);
