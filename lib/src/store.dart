@@ -48,8 +48,23 @@ Epic<State> combineEpics<State>(List<Epic<State>> epics) {
 /// The state can only be changed by passing an [Action] to the [dispatcher].
 /// The action will be sent to the [Reducer] to calculate the new state.
 ///
+/// [Epic]s are used for asynchronous operations.
+///
 /// Listen to the [state] stream to get the current state and receive updates.
 class Store<State> {
+  /// Creates a new instance of a store.
+  ///
+  /// The [_reducer] defines how state is changed when actions are dispatched.
+  ///
+  /// Provide the [initialState] to pass to the store. This is required so a
+  /// value can always be emitted to subscribers, even if no actions have been
+  /// dispatched.
+  ///
+  /// Optionally pass an [epic] to handle asynchronous operations.
+  ///
+  /// The [sync] argument determines whether synchronous dispatching is used.
+  /// By default asynchronous dispatching is used. See [BehaviorSubject.seeded]
+  /// for more information. Only change this if you know what you are doing.
   Store(this._reducer, {required State initialState, Epic<State>? epic, bool sync = false})
       : _changeSubject = BehaviorSubject<State>.seeded(initialState, sync: sync),
         _dispatchSubject = PublishSubject<Action>(sync: sync) {
@@ -63,10 +78,13 @@ class Store<State> {
   final BehaviorSubject<State> _changeSubject;
   final PublishSubject<Action> _dispatchSubject;
 
+  /// A [Stream] that emits the latest state on subscribe and when it changes.
   ValueStream<State> get state => _changeSubject.stream;
 
+  /// A [StreamSink] to dispatch actions.
   StreamSink<Action> get dispatcher => _dispatchSubject.sink;
 
+  /// Dispatches an action by passing it to the reducer and, optionally, the epic.
   void dispatch(Action action) {
     dispatcher.add(action);
   }
@@ -79,6 +97,8 @@ class Store<State> {
     }
   }
 
+  /// Disposes the streams of the store.
+  /// Only use this if the store has to be disposed in a running app.
   Future<List<dynamic>> dispose() {
     return Future.wait<dynamic>(<Future<dynamic>>[_changeSubject.close(), _dispatchSubject.close()]);
   }
