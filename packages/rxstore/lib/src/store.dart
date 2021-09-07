@@ -69,7 +69,7 @@ class Store<State> {
       : _changeSubject = BehaviorSubject<State>.seeded(initialState, sync: sync),
         _dispatchSubject = PublishSubject<Action>(sync: sync) {
     if (epic != null) {
-      epic(_dispatchSubject.stream, state).listen(dispatcher.add);
+      _epicSubscription = epic(_dispatchSubject.stream, state).listen(dispatcher.add);
     }
     _dispatchSubject.stream.listen(_reduce);
   }
@@ -77,6 +77,8 @@ class Store<State> {
   final Reducer<State> _reducer;
   final BehaviorSubject<State> _changeSubject;
   final PublishSubject<Action> _dispatchSubject;
+
+  StreamSubscription? _epicSubscription;
 
   /// A [Stream] that emits the latest state on subscribe and when it changes.
   ValueStream<State> get state => _changeSubject.stream;
@@ -100,6 +102,10 @@ class Store<State> {
   /// Disposes the streams of the store.
   /// Only use this if the store has to be disposed in a running app.
   Future<List<dynamic>> dispose() {
-    return Future.wait<dynamic>(<Future<dynamic>>[_changeSubject.close(), _dispatchSubject.close()]);
+    return Future.wait<dynamic>(<Future<dynamic>>[
+      if (_epicSubscription != null) _epicSubscription!.cancel(),
+      _changeSubject.close(),
+      _dispatchSubject.close(),
+    ]);
   }
 }

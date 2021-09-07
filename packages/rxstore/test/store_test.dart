@@ -125,6 +125,18 @@ void main() {
           ..dispatch(const AddInt(42))
           ..dispatch(const AddInt(1337));
       });
+
+      test('ensure epic is disposed together with store', () {
+        var _isCanceled = false;
+        Stream<Action> epic(Stream<Action> actions, ValueStream<int> state) {
+          return const Stream<Action>.empty().doOnCancel(() => _isCanceled = true);
+        }
+
+        final store = Store<int>(intReducer, initialState: 42, epic: epic);
+        expect(_isCanceled, false);
+        store.dispose();
+        expect(_isCanceled, true);
+      });
     });
   });
 }
