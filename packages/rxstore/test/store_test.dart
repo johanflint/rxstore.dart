@@ -65,7 +65,7 @@ void main() {
     test('notifies subscribers with the updated state when an action is reduced', () {
       final store = Store<int>(intReducer, initialState: 42, sync: true);
 
-      expect(store.state, emitsInOrder(<int>[42, 1337]));
+      expect(store.state, emitsInOrder(<int>[42, 42 + 1337]));
 
       store
         ..dispatch(const AddInt(1337))
@@ -90,7 +90,9 @@ void main() {
           return const Stream<Action>.empty();
         }
 
-        Store<int>(intReducer, initialState: 42, epic: epic)..dispatch(const AddInt(42))..dispatch(const AddInt(1337));
+        Store<int>(intReducer, initialState: 42, epic: epic)
+          ..dispatch(const AddInt(42))
+          ..dispatch(const AddInt(1337));
       });
 
       test('dispatches the emitted actions', () async {
@@ -137,6 +139,17 @@ void main() {
         store.dispose();
         expect(_isCanceled, true);
       });
+
+      test('passes an action first to the reducer before the epic', () {
+        Stream<Action> _handleAction(Action action, int state) async* {
+          expect(state, 84); // will be 42 if the reducer isn't called before
+        }
+
+        Epic<int> epic() => (Stream<Action> actions, ValueStream<int> state) =>
+            actions.whereType<AddInt>().switchMap((AddInt action) => _handleAction(action, state.requireValue));
+
+        Store<int>(intReducer, initialState: 42, epic: epic()).dispatch(const AddInt(42));
+      });
     });
   });
 }
@@ -161,7 +174,7 @@ class MultiplyInt implements Action {
 
 int intReducer(int state, Action action) {
   if (action is AddInt) {
-    return action.payload;
+    return state + action.payload;
   }
 
   if (action is MultiplyInt) {
