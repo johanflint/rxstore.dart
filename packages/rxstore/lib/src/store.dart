@@ -60,23 +60,27 @@ class Store<State> {
   /// value can always be emitted to subscribers, even if no actions have been
   /// dispatched.
   ///
-  /// Optionally pass an [epic] to handle asynchronous operations.
+  /// Optionally pass an [epic] to handle asynchronous operations. Epics are
+  /// called after reducers to guarantee that the state is up-to-date.
   ///
   /// The [sync] argument determines whether synchronous dispatching is used.
   /// By default asynchronous dispatching is used. See [BehaviorSubject.seeded]
   /// for more information. Only change this if you know what you are doing.
   Store(this._reducer, {required State initialState, Epic<State>? epic, bool sync = false})
       : _changeSubject = BehaviorSubject<State>.seeded(initialState, sync: sync),
-        _dispatchSubject = PublishSubject<Action>(sync: sync) {
+        _dispatchSubject = PublishSubject<Action>(sync: sync),
+        _dispatchEpicSubject = PublishSubject<Action>(sync: sync) {
     if (epic != null) {
       _epicSubscription = epic(_dispatchSubject.stream, state).listen(dispatcher.add);
     }
-    _dispatchSubject.stream.listen(_reduce);
+
+    _dispatchSubject.stream.map(_reduce).listen(_dispatchEpicSubject.add);
   }
 
   final Reducer<State> _reducer;
   final BehaviorSubject<State> _changeSubject;
   final PublishSubject<Action> _dispatchSubject;
+  final PublishSubject<Action> _dispatchEpicSubject;
 
   StreamSubscription? _epicSubscription;
 
@@ -91,12 +95,13 @@ class Store<State> {
     dispatcher.add(action);
   }
 
-  void _reduce(Action action) {
+  Action _reduce(Action action) {
     final currentState = state.requireValue;
     final newState = _reducer(currentState, action);
     if (newState != currentState) {
       _changeSubject.add(newState);
     }
+    return action;
   }
 
   /// Disposes the streams of the store.
