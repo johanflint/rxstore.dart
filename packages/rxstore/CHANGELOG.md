@@ -1,3 +1,6 @@
+## 0.3.0
+- Ensure that the reducer runs before the epic
+
 ## 0.2.1
 - Update API docs
 - Update the README
