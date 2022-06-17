@@ -71,7 +71,7 @@ class Store<State> {
         _dispatchSubject = PublishSubject<Action>(sync: sync),
         _dispatchEpicSubject = PublishSubject<Action>(sync: sync) {
     if (epic != null) {
-      _epicSubscription = epic(_dispatchSubject.stream, state).listen(dispatcher.add);
+      _epicSubscription = epic(_dispatchEpicSubject.stream, state).listen(dispatcher.add);
     }
 
     _dispatchSubject.stream.map(_reduce).listen(_dispatchEpicSubject.add);
