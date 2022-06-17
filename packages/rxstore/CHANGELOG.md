@@ -1,5 +1,8 @@
+## 0.4.0
+- Ensure that the reducer runs before the epic 
+
 ## 0.3.0
-- Ensure that the reducer runs before the epic
+- Because of a failed release, this version is identical to 0.2.1
 
 ## 0.2.1
 - Update API docs
