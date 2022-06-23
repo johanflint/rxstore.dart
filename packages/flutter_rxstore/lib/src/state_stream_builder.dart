@@ -1,9 +1,17 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' hide Action;
 import 'package:flutter_rxstore/flutter_rxstore.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:rxstore/rxstore.dart';
 
-typedef AsyncWidgetBuilder<T> = Widget Function(BuildContext context, T state);
+/// Function that dispatches the action by passing it to the reducer and,
+/// optionally, the epic.
+typedef Dispatch = void Function(Action action);
+
+/// Called whenever the state in the [Store] changes.
+///
+/// This builder must only return a widget and should not have any side
+/// effects as it may be called multiple times.
+typedef AsyncWidgetBuilder<T> = Widget Function(BuildContext context, T state, Dispatch dispatch);
 
 /// Widget that builds itself based on the latest state from the [Store].
 ///
@@ -32,7 +40,7 @@ class StateStreamBuilder<State> extends StatelessWidget {
       stream: store.state.map((event) => event),
       initialData: store.state.value,
       builder: (BuildContext context, AsyncSnapshot<State> snapshot) {
-        return builder(context, snapshot.requireData);
+        return builder(context, snapshot.requireData, store.dispatch);
       },
     );
   }

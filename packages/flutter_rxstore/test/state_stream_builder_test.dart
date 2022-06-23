@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart' hide Action;
 import 'package:flutter_rxstore/flutter_rxstore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:rxstore/rxstore.dart';
 
 void main() {
@@ -13,7 +14,7 @@ void main() {
       final StoreProvider<int> widget = StoreProvider<int>(
         store: store,
         child: StateStreamBuilder<int>(
-          builder: (context, state) {
+          builder: (context, state, dispatch) {
             receivedState = state;
 
             return const SizedBox();
@@ -34,7 +35,7 @@ void main() {
       final StoreProvider<int> widget = StoreProvider<int>(
         store: store,
         child: StateStreamBuilder<int>(
-          builder: (context, state) {
+          builder: (context, state, dispatch) {
             receivedState = state;
 
             return const SizedBox();
@@ -45,6 +46,25 @@ void main() {
       await tester.pumpWidget(widget);
 
       expect(receivedState, 44);
+    });
+
+    testWidgets('passes dispatch to the build function', (WidgetTester tester) async {
+      final Store<int> store = Store<int>(intReducer, initialState: 42);
+
+      final StoreProvider<int> widget = StoreProvider<int>(
+        store: store,
+        child: StateStreamBuilder<int>(
+          builder: (context, state, dispatch) {
+            dispatch(AddInt(2));
+
+            return const SizedBox();
+          },
+        ),
+      );
+
+      await tester.pumpWidget(widget);
+
+      expect(store.state.value, 44);
     });
   });
 }
