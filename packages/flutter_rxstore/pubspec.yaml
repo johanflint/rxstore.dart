@@ -1,6 +1,6 @@
 name: flutter_rxstore
 description: Contains a Flutter widget to easily obtain a reference to an rxstore
-version: 0.2.0
+version: 0.3.0
 homepage: https://github.com/johanflint/rxstore.dart
 
 environment:
